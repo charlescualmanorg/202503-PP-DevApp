@@ -42,8 +42,7 @@ steps:
   - script: |
       sudo systemctl start mysql
       sudo systemctl status mysql || sudo systemctl restart mysql
-      sudo systemctl start mysql
-      sudo mysql -e "SELECT user, host, plugin FROM mysql.user;" 
+
       # Establecer contraseña para root
       sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root_password';"
       sudo mysql -e "FLUSH PRIVILEGES;"
@@ -57,7 +56,7 @@ steps:
 
   - script: |
       cp .env.example .env
-      sed -i 's/DB_DATABASE=laravel/DB_DATABASE=laravel_db/' .env
+      sed -i 's/DB_DATABASE=laravel/DB_DATABASE=AppPPBD/' .env
       sed -i 's/DB_USERNAME=root/DB_USERNAME=laravel_user/' .env
       sed -i 's/DB_PASSWORD=/DB_PASSWORD=secret_password/' .env
       php artisan key:generate
