@@ -41,6 +41,11 @@ steps:
 
   - script: |
       sudo systemctl start mysql
+      sudo mysql -e "SELECT user, host, plugin FROM mysql.user;" 
+    displayName: '🔍 Verificar autenticación de MySQL'
+
+  - script: |
+      sudo systemctl start mysql
       sudo systemctl status mysql || sudo systemctl restart mysql
 
       ###
