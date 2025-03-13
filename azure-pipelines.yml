@@ -47,8 +47,8 @@ steps:
       sudo /etc/init.d/mysql stop
       sudo mysqld_safe --skip-grant-tables &
       mysql -u root
-      UPDATE mysql.user SET authentication_string='root_password', password_expired='N' WHERE User='root';
-      FLUSH PRIVILEGES;
+      sudo mysql -e "UPDATE mysql.user SET authentication_string='root_password', password_expired='N' WHERE User='root';"
+      sudo mysql -e "FLUSH PRIVILEGES;"
       sudo /etc/init.d/mysql stop
       sudo systemctl start mysql
       sudo systemctl status mysql || sudo systemctl restart mysql
