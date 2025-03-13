@@ -10,7 +10,7 @@ trigger:
       - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-16.04'
 
 variables:
   PHP_VERSION: 7.4
