@@ -1,0 +1,64 @@
+# PHP
+# Test and package your PHP project.
+# Add steps that run tests, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/php
+
+trigger:
+  branches:
+    include:
+      - developer
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  PHP_VERSION: 7.4
+  NODE_VERSION: 14
+  MYSQL_VERSION: 5.7
+
+steps:
+  - script: |
+      sudo apt update
+      sudo apt install -y php${PHP_VERSION} php-mbstring php-xml php-bcmath unzip
+    displayName: 'Instalar PHP y extensiones'
+
+  - script: |
+      composer install --no-interaction --prefer-dist
+    displayName: 'Instalar dependencias de Laravel'
+
+  - script: |
+      cp .env.example .env
+      php artisan key:generate
+    displayName: 'Configurar entorno de Laravel'
+
+  - script: |
+      php artisan migrate --force
+    displayName: 'Ejecutar migraciones de MySQL'
+
+  - script: |
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    displayName: 'Optimizar configuración de Laravel'
+
+  - script: |
+      npm install
+      npm run prod
+    displayName: 'Instalar dependencias Frontend'
+
+  - script: |
+      php artisan test
+    displayName: 'Ejecutar pruebas de Laravel'
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.SourcesDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/deploy.zip'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/deploy.zip'
+      artifactName: 'drop'
