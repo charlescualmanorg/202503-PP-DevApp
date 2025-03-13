@@ -43,6 +43,17 @@ steps:
       sudo systemctl start mysql
       sudo systemctl status mysql || sudo systemctl restart mysql
 
+      ###
+      sudo /etc/init.d/mysql stop
+      sudo mysqld_safe --skip-grant-tables &
+      mysql -u root
+      UPDATE mysql.user SET authentication_string=PASSWORD('root_password'), password_expired='N' WHERE User='root';
+      FLUSH PRIVILEGES;
+      sudo /etc/init.d/mysql stop
+      sudo systemctl start mysql
+      sudo systemctl status mysql || sudo systemctl restart mysql
+      ###
+
       # Establecer contraseña para root
       sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root_password';"
       sudo mysql -e "FLUSH PRIVILEGES;"
