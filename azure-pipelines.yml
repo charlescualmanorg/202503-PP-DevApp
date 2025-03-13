@@ -2,7 +2,6 @@
 # Test and package your PHP project.
 # Add steps that run tests, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/php
-
 trigger:
   branches:
     include:
@@ -16,6 +15,22 @@ variables:
   PHP_VERSION: 7.4
   NODE_VERSION: 14
   MYSQL_VERSION: 5.7
+  DB_NAME: 'AppPPBD'
+  DB_USER: 'laravel_user'
+  DB_PASSWORD: 'secret_password'
+  DB_HOST: '127.0.0.1'
+  DB_PORT: 3306
+
+services:
+  mysql:
+    image: mysql:5.7
+    env:
+      MYSQL_DATABASE: $(DB_NAME)
+      MYSQL_USER: $(DB_USER)
+      MYSQL_PASSWORD: $(DB_PASSWORD)
+      MYSQL_ROOT_PASSWORD: 'root_password'
+    ports:
+      - 3306:3306
 
 steps:
   - script: |
@@ -41,11 +56,22 @@ steps:
 
   - script: |
       cp .env.example .env
-      sed -i 's/DB_DATABASE=laravel/DB_DATABASE=AppPPBD/' .env
-      sed -i 's/DB_USERNAME=root/DB_USERNAME=laravel_user/' .env
-      sed -i 's/DB_PASSWORD=/DB_PASSWORD=secret_password/' .env
+      sed -i 's/DB_DATABASE=laravel/DB_DATABASE=$(DB_NAME)/' .env
+      sed -i 's/DB_USERNAME=root/DB_USERNAME=$(DB_USER)/' .env
+      sed -i 's/DB_PASSWORD=/DB_PASSWORD=$(DB_PASSWORD)/' .env
+      sed -i 's/DB_HOST=127.0.0.1/DB_HOST=$(DB_HOST)/' .env
+      sed -i 's/DB_PORT=3306/DB_PORT=$(DB_PORT)/' .env
       php artisan key:generate
     displayName: '🔑 Configurar entorno Laravel'
+
+  - script: |
+      sleep 20
+      mysql -h $(DB_HOST) -P $(DB_PORT) -u$(DB_USER) -p$(DB_PASSWORD) -e "SHOW DATABASES;"
+    displayName: '✅ Verificar conexión con MySQL'
+
+  - script: |
+      php artisan migrate --force
+    displayName: '🗄️ Ejecutar migraciones'
 
   - script: |
       php artisan serve --host=0.0.0.0 --port=8000 &
