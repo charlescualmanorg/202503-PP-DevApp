@@ -23,13 +23,21 @@ steps:
       sudo apt-get install -y software-properties-common
       sudo add-apt-repository -y ppa:ondrej/php
       sudo apt-get update
-      sudo apt-get install -y php7.4 php7.4-cli php7.4-mbstring php7.4-xml php7.4-bcmath php7.4-curl unzip
+      sudo apt-get remove -y php*
+      sudo apt-get install -y php7.4 php7.4-cli php7.4-mbstring php7.4-xml php7.4-bcmath php7.4-curl php7.4-zip unzip
+      sudo update-alternatives --set php /usr/bin/php7.4
       php -v
-    displayName: 'Instalar PHP 7.4'
+    displayName: '🔧 Instalar y forzar PHP 7.4'
 
   - script: |
-      composer install --no-interaction --prefer-dist
-    displayName: 'Instalar dependencias de Laravel'
+      curl -sS https://getcomposer.org/installer | php
+      sudo mv composer.phar /usr/local/bin/composer
+      composer --version
+    displayName: '⚙️ Instalar Composer'
+
+  - script: |
+      composer install --ignore-platform-reqs --no-interaction --prefer-dist
+    displayName: '📦 Instalar dependencias de Laravel'
 
   - script: |
       cp .env.example .env
