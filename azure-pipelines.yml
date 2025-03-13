@@ -40,28 +40,28 @@ steps:
     displayName: '📦 Instalar dependencias de Laravel'
 
   - script: |
+      sudo systemctl start mysql
+      sudo mysql -e "CREATE DATABASE IF NOT EXISTS laravel_db;"
+      sudo mysql -e "CREATE USER IF NOT EXISTS 'laravel_user'@'localhost' IDENTIFIED BY 'secret_password';"
+      sudo mysql -e "GRANT ALL PRIVILEGES ON laravel_db.* TO 'laravel_user'@'localhost';"
+      sudo mysql -e "FLUSH PRIVILEGES;"
+    displayName: '🗄️ Configurar MySQL'
+
+  - script: |
       cp .env.example .env
+      sed -i 's/DB_DATABASE=laravel/DB_DATABASE=laravel_db/' .env
+      sed -i 's/DB_USERNAME=root/DB_USERNAME=laravel_user/' .env
+      sed -i 's/DB_PASSWORD=/DB_PASSWORD=secret_password/' .env
       php artisan key:generate
-    displayName: 'Configurar entorno de Laravel'
+    displayName: '🔑 Configurar entorno Laravel'
 
   - script: |
       php artisan migrate --force
-    displayName: 'Ejecutar migraciones de MySQL'
+    displayName: '📊 Ejecutar migraciones'
 
   - script: |
-      php artisan config:cache
-      php artisan route:cache
-      php artisan view:cache
-    displayName: 'Optimizar configuración de Laravel'
-
-  - script: |
-      npm install
-      npm run prod
-    displayName: 'Instalar dependencias Frontend'
-
-  - script: |
-      php artisan test
-    displayName: 'Ejecutar pruebas de Laravel'
+      php artisan serve --host=0.0.0.0 --port=8000 &
+    displayName: '🚀 Iniciar Servidor Laravel'
 
   - task: ArchiveFiles@2
     inputs:
