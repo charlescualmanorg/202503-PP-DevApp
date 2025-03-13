@@ -40,6 +40,7 @@ steps:
     displayName: '📦 Instalar dependencias de Laravel'
 
   - script: |
+      sudo apt install mysql-server
       sudo systemctl start mysql
       sudo mysql -e "SELECT user, host, plugin FROM mysql.user;" 
     displayName: '🔍 Verificar autenticación de MySQL'
