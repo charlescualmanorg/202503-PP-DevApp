@@ -375,6 +375,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     status: 'pendiente'
                 };
 
+                // Si es viaje programado, incluir scheduled_time
+                var scheduledTimeInput = document.getElementById('scheduled_time');
+                if (scheduledTimeInput) {
+                    rideData.scheduled_time = scheduledTimeInput.value;
+                }
+
+
                 // Enviar la solicitud vía AJAX para crear el registro en la tabla rides
                 fetch("{{ route('rides.store') }}", {
                     method: 'POST',
@@ -384,14 +391,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify(rideData)
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success){
-                        alert('Solicitud de viaje creada exitosamente.');
-                        // Redirigir o actualizar la vista según convenga
-                        window.location.href = "/rides/" + data.ride.id; // ejemplo: redirigir a la vista del viaje
-                    } else {
-                        alert('Ocurrió un error al crear la solicitud.');
+                                .then(response => response.text())
+                .then(text => {
+                    console.log("Respuesta:", text);
+                    try {
+                        var data = JSON.parse(text);
+                        if (data.success) {
+                            alert('Solicitud de viaje creada exitosamente.');
+                            window.location.href = "/rides/" + data.ride.id;
+                        } else {
+                            alert('Ocurrió un error al crear la solicitud.');
+                        }
+                    } catch(e) {
+                        console.error("Error parseando JSON:", e, text);
+                        alert('Error al procesar la respuesta del servidor.');
                     }
                 })
                 .catch(error => {
