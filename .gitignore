@@ -23,3 +23,5 @@ Homestead.json
 /.vagrant
 .phpunit.result.cache
 .history/
+resources/views/rides/temporal create.blade.php
+resources/views/rides/tCopia de create.blade.php
