@@ -44,6 +44,8 @@
         <!-- Botón para calcular la ruta -->
         <div class="form-group">
             <button type="button" id="calculateRoute" class="btn btn-primary">Calcular viaje</button>
+            <button type="button" id="submitRide" class="btn btn-success" style="display:none;">Solicitar Viaje</button>
+            <a href="/" class="btn btn-danger">Cancelar</a>
         </div>
         
         <!-- Loader -->
@@ -63,10 +65,6 @@
             <div id="map" style="height: 400px; width: 100%;"></div>
         </div>
         
-        <div class="form-group">
-        <button type="button" id="submitRide" class="btn btn-success" style="display:none;">Solicitar Viaje</button>
-            <a href="/" class="btn btn-danger">Cancelar</a>
-        </div>
     </form>
 </div>
 
@@ -78,8 +76,17 @@
         <h5 class="modal-title" id="serviceModalLabel">Selecciona el Servicio</h5>
         <!-- Botón para minimizar el modal -->
          <!-- Botón de Restaurar Modal -->
-        <button type="button" id="minimizeModalBtn" class="btn btn-sm btn-secondary"><i class="fa-solid fa-window-minimize"></i></button>
-        <button type="button" id="restoreModalBtn" class="btn btn-sm btn-secondary" style="display:none; "><i class="fa-solid fa-window-maximize"></i></button>
+         <div class="form-group">
+            <div class="btn-group" role="group">
+                <button type="button" id="minimizeModalBtn" class="btn btn-sm btn-secondary">
+                <i class="fa-solid fa-window-minimize"></i>
+                </button>
+                <button type="button" id="restoreModalBtn" class="btn btn-sm btn-secondary" style="display:none;">
+                <i class="fa-solid fa-window-maximize"></i>
+                </button>
+            </div>
+        </div>
+
       </div>
       <div class="modal-body" id="serviceModalBody">
         <!-- El listado de servicios se llenará dinámicamente -->
