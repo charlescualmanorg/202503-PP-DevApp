@@ -17,8 +17,8 @@
                             <label for="name" class="col-md-4 col-form-label text-md-right">{{ __('Name') }}</label>
                             <div class="col-md-6">
                                 <input id="name" type="text"
-                                    class="form-control @error('name') is-invalid @enderror"
-                                    name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
+                                       class="form-control @error('name') is-invalid @enderror"
+                                       name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
                                 @error('name')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -32,8 +32,8 @@
                             <label for="profile_image" class="col-md-4 col-form-label text-md-right">{{ __('Imagen de Perfil') }}</label>
                             <div class="col-md-6">
                                 <input id="profile_image" type="file"
-                                    class="form-control @error('profile_image') is-invalid @enderror"
-                                    name="profile_image" accept="image/*" required>
+                                       class="form-control @error('profile_image') is-invalid @enderror"
+                                       name="profile_image" accept="image/*" required>
                                 @error('profile_image')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -77,11 +77,11 @@
                             <div class="form-group row">
                                 <label for="vehicle_type" class="col-md-4 col-form-label text-md-right">{{ __('Tipo de Vehículo') }}</label>
                                 <div class="col-md-6">
-                                    <select id="vehicle_type" name="vehicle_type" class="form-control" require>
+                                    <select id="vehicle_type" name="vehicle_type" class="form-control" required>
                                         <option value="">Seleccione</option>
-                                        <option value="sedan">Sedán</option>
-                                        <option value="suv">SUV</option>
-                                        <option value="moto">Motocicleta</option>
+                                        <option value="sedan" {{ old('vehicle_type') == 'sedan' ? 'selected' : '' }}>Sedán</option>
+                                        <option value="suv" {{ old('vehicle_type') == 'suv' ? 'selected' : '' }}>SUV</option>
+                                        <option value="moto" {{ old('vehicle_type') == 'moto' ? 'selected' : '' }}>Motocicleta</option>
                                     </select>
                                 </div>
                             </div>
@@ -96,10 +96,24 @@
                             <div class="form-group row">
                                 <label for="model" class="col-md-4 col-form-label text-md-right">{{ __('Modelo del Vehículo') }}</label>
                                 <div class="col-md-6">
-                                    <input id="model" type="number" class="form-control" name="model" value="{{ old('model') }}">
+                                    <input id="model" type="text" class="form-control" name="model" value="{{ old('model') }}">
                                 </div>
                             </div>
 
+                            <!-- Nuevo campo: Selección de Tipo de Servicio -->
+                            <div class="form-group row">
+                                <label for="service_type_id" class="col-md-4 col-form-label text-md-right">{{ __('Tipo de Servicio') }}</label>
+                                <div class="col-md-6">
+                                    <select name="service_type_id" id="service_type_id" class="form-control" required>
+                                        <option value="" require>Seleccione el servicio</option>
+                                        @foreach($serviceTypes as $service)
+                                            <option value="{{ $service->id }}" {{ old('service_type_id') == $service->id ? 'selected' : '' }}>
+                                                {!! $service->icon !!} {{ $service->description }} - Q.{{ number_format($service->price, 2) }}/Km.
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Email -->
@@ -107,8 +121,8 @@
                             <label for="email" class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
                             <div class="col-md-6">
                                 <input id="email" type="email"
-                                    class="form-control @error('email') is-invalid @enderror"
-                                    name="email" value="{{ old('email') }}" required autocomplete="email">
+                                       class="form-control @error('email') is-invalid @enderror"
+                                       name="email" value="{{ old('email') }}" required autocomplete="email">
                                 @error('email')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -122,8 +136,8 @@
                             <label for="password" class="col-md-4 col-form-label text-md-right">{{ __('Password') }}</label>
                             <div class="col-md-6">
                                 <input id="password" type="password"
-                                    class="form-control @error('password') is-invalid @enderror"
-                                    name="password" required autocomplete="new-password">
+                                       class="form-control @error('password') is-invalid @enderror"
+                                       name="password" required autocomplete="new-password">
                                 @error('password')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -137,7 +151,7 @@
                             <label for="password-confirm" class="col-md-4 col-form-label text-md-right">{{ __('Confirm Password') }}</label>
                             <div class="col-md-6">
                                 <input id="password-confirm" type="password" class="form-control"
-                                    name="password_confirmation" required autocomplete="new-password">
+                                       name="password_confirmation" required autocomplete="new-password">
                             </div>
                         </div>
 
@@ -158,21 +172,21 @@
 
 <!-- Script para mostrar/ocultar campos adicionales para conductores -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const vehicleFields = document.getElementById('vehicle-fields');
+document.addEventListener('DOMContentLoaded', function() {
+    const vehicleFields = document.getElementById('vehicle-fields');
 
-        function toggleVehicleFields() {
-            const role = document.querySelector('input[name="role"]:checked').value;
-            vehicleFields.style.display = (role === 'conductor') ? 'block' : 'none';
-        }
+    function toggleVehicleFields() {
+        const role = document.querySelector('input[name="role"]:checked').value;
+        vehicleFields.style.display = (role === 'conductor') ? 'block' : 'none';
+    }
 
-        // Verificar al cargar la página
-        toggleVehicleFields();
+    // Verificar al cargar la página
+    toggleVehicleFields();
 
-        // Escuchar cambios en la selección del rol
-        document.querySelectorAll('input[name="role"]').forEach(function(elem) {
-            elem.addEventListener('change', toggleVehicleFields);
-        });
+    // Escuchar cambios en la selección del rol
+    document.querySelectorAll('input[name="role"]').forEach(function(elem) {
+        elem.addEventListener('change', toggleVehicleFields);
     });
+});
 </script>
 @endsection

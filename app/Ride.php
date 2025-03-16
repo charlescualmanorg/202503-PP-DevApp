@@ -12,7 +12,8 @@ class Ride extends Model
         'client_id', 'driver_id', 'vehicle_id',
         'pickup_location', 'dropoff_location', 
         'status', 'fare',
-        'scheduled_time'
+        'scheduled_time','pickup_lat','pickup_lng',
+        'dropoff_lat','dropoff_lng'
     ];
 
     // Relación con el cliente (User)

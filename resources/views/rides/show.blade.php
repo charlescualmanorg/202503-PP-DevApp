@@ -7,7 +7,7 @@
     <p><strong>Recogida:</strong> {{ $ride->pickup_location }}</p>
     <p><strong>Destino:</strong> {{ $ride->dropoff_location }}</p>
     <p><strong>Estado:</strong> {{ $ride->status }}</p>
-    <p><strong>Tarifa Sugerida:</strong> ${{ number_format($ride->fare, 2) }}</p>
+    <p><strong>Tarifa Sugerida:</strong> Q.{{ number_format($ride->fare, 2) }}</p>
     @if($ride->scheduled_time)
     <p><strong>Fecha y Hora Programada:</strong> {{ $ride->scheduled_time }}</p>
     @endif

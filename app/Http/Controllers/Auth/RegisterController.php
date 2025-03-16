@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use App\Providers\RouteServiceProvider;
+use Illuminate\Support\Facades\DB;
 
 class RegisterController extends Controller
 {
@@ -105,6 +106,7 @@ class RegisterController extends Controller
                 'user_id'        => $user->id,
                 'license_number' => $data['license_number'], // Licencia de conducir
                 'vehicle_type'   => $data['vehicle_type'],
+                'service_type_id'=> $data['service_type_id'],
             ]);
     
             Vehicle::create([
@@ -116,5 +118,11 @@ class RegisterController extends Controller
         }
 
         return $user;
+    }
+
+    public function showRegistrationForm()
+    {
+        $serviceTypes = \App\ServiceType::where('status', true)->get();
+        return view('auth.register')->with(compact('serviceTypes'));
     }
 }
