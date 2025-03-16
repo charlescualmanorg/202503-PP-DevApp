@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Ride;
+use Auth;
 use Illuminate\Http\Request;
 
 class RideController extends Controller
@@ -19,7 +21,10 @@ class RideController extends Controller
         // Se espera recibir un parámetro 'type' que defina el tipo de viaje.
         // Por defecto se asume 'immediate' (inmediato) si no se especifica.
         $type = $request->input('type', 'immediate');
-        return view('rides.create', compact('type'));
+
+        $serviceTypes = \App\ServiceType::where('status', true)->get();
+
+        return view('rides.create', compact('type','serviceTypes'));
     }
 
     // Procesar la solicitud de viaje
@@ -29,7 +34,14 @@ class RideController extends Controller
         $rules = [
             'pickup_location'  => 'required|string',
             'dropoff_location' => 'required|string',
-            'estimated_time'   => 'required|numeric', 
+            'pickup_lat'       => 'required',
+            'pickup_lng'       => 'required',
+            'dropoff_lat'      => 'required',
+            'dropoff_lng'      => 'required',
+            'estimated_time'   => 'required',
+            'fare'             => 'required|numeric',
+            'type'             => 'required|string',
+
         ];
 
         // Si es un viaje programado, se requiere la fecha y hora
@@ -46,7 +58,11 @@ class RideController extends Controller
         $ride->dropoff_location = $validated['dropoff_location'];
         $ride->estimated_time = $validated['estimated_time'];
         $ride->status = 'pendiente';
-        $ride->fare = 0.00;
+        $ride->fare = $validated['fare'];
+        $ride->pickup_lat= $validated['pickup_lat'];
+        $ride->pickup_lng= $validated['pickup_lng'];
+        $ride->dropoff_lat= $validated['dropoff_lat'];
+        $ride->dropoff_lng= $validated['dropoff_lng'];
 
         // Si es un viaje programado, guardar la fecha y hora
         if ($request->input('type') === 'scheduled') {
@@ -57,8 +73,13 @@ class RideController extends Controller
 
         // Aquí se podrían disparar eventos para notificar al usuario o iniciar lógica de asignación
 
-        return redirect()->route('rides.show', $ride->id)
-                        ->with('success', 'Solicitud de viaje creada exitosamente.');
+        //por el momeno dejaremos esto comentado, porque necesito que regrese un json para almacenar desde el modal de create.blade.php
+        /*return redirect()->route('rides.show', $ride->id)
+                        ->with('success', 'Solicitud de viaje creada exitosamente.');*/
+        return response()->json([
+            'success' => true,
+            'ride'    => $ride
+        ], 201);
     }
 
     // Mostrar detalles de la solicitud de viaje

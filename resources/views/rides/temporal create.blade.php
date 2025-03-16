@@ -7,13 +7,15 @@
         @csrf
         <!-- Tipo de viaje y tiempo estimado -->
         <input type="hidden" name="type" value="{{ $type }}">
-        <input type="hidden" name="estimated_time" id="estimated_time" value="">    
+        <input type="hidden" name="estimated_time" id="estimated_time" value="">
+        
         <!-- Coordenadas de recogida y destino -->
         <input type="hidden" id="pickup_lat" name="pickup_lat" value="">
         <input type="hidden" id="pickup_lng" name="pickup_lng" value="">
         <input type="hidden" id="dropoff_lat" name="dropoff_lat" value="">
         <input type="hidden" id="dropoff_lng" name="dropoff_lng" value="">
-        <!-- Campos para almacenar las direcciones ingresadas manualmente (no actualizados por drag) -->
+        
+        <!-- Campos para almacenar los textos ingresados manualmente (no actualizados por drag) -->
         <input type="hidden" id="pickup_location_initial" name="pickup_location_initial" value="">
         <input type="hidden" id="dropoff_location_initial" name="dropoff_location_initial" value="">
         
@@ -54,17 +56,19 @@
             <p>Cargando ruta...</p>
         </div>
         
-        <!-- Información de la ruta (tiempo estimado y hora de llegada) -->
-        <div id="routeInfo"></div>
-
         <!-- Contenedor del mapa -->
         <div class="form-group">
             <label>Ruta a Recorrer:</label>
             <div id="map" style="height: 400px; width: 100%;"></div>
         </div>
         
+        <!-- Información de la ruta (tiempo estimado y hora de llegada) -->
+        <div id="routeInfo"></div>
+        
         <div class="form-group">
-        <button type="button" id="submitRide" class="btn btn-success" style="display:none;">Solicitar Viaje</button>
+            <!-- El registro se genera vía AJAX al seleccionar un servicio -->
+            <!-- Este botón ya no enviará el formulario, pues la creación de la solicitud se realizará por JS -->
+            <button type="button" id="submitRide" class="btn btn-success" style="display:none;">Solicitar Viaje</button>
             <a href="/" class="btn btn-danger">Cancelar</a>
         </div>
     </form>
@@ -76,29 +80,27 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="serviceModalLabel">Selecciona el Servicio</h5>
-        <!-- Botón para minimizar el modal -->
-         <!-- Botón de Restaurar Modal -->
         <button type="button" id="minimizeModalBtn" class="btn btn-sm btn-secondary"><i class="fa-solid fa-window-minimize"></i></button>
-        <button type="button" id="restoreModalBtn" class="btn btn-sm btn-secondary" style="display:none; "><i class="fa-solid fa-window-maximize"></i></button>
+        <button type="button" id="restoreModalBtn" class="btn btn-sm btn-secondary" style="display:none; z-index:1200;"><i class="fa-solid fa-window-maximize"></i></button>
       </div>
       <div class="modal-body" id="serviceModalBody">
         <!-- El listado de servicios se llenará dinámicamente -->
       </div>
       <div class="modal-footer" id="serviceModalFooter">
+        <!-- Este botón cierra el modal, pero la selección se realiza al hacer clic en una tarjeta -->
         <button type="button" class="btn btn-primary" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
 </div>
 
+@endsection
 
-
-<!-- Google Maps JavaScript API (Reemplaza YOUR_API_KEY por tu clave) -->
+@section('scripts')
+<!-- Google Maps JavaScript API (clave obtenida desde config) -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googlemaps.key') }}&libraries=places" defer></script>
 
 <script>
-// Supongamos que 'serviceTypes' se inyecta desde el controlador como JSON:
-// Ejemplo: [{"id":1,"description":"Taxi","icon":"<i class=\"fa-solid fa-taxi\"></i>","price":2.50}, ...]
 var serviceTypes = @json($serviceTypes);
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -113,9 +115,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var dropoffLatInput = document.getElementById('dropoff_lat');
     var dropoffLngInput = document.getElementById('dropoff_lng');
     var currentLocationBtn = document.getElementById('currentLocationBtn');
-    var pickupInitialInput = document.getElementById('pickup_location_initial');
-    var dropoffInitialInput = document.getElementById('dropoff_location_initial');
-    // Botón de restaurar modal (fuera del modal)
     var restoreModalBtn = document.getElementById('restoreModalBtn');
 
     var customMapStyle = [
@@ -125,27 +124,21 @@ document.addEventListener('DOMContentLoaded', function() {
         { "featureType": "administrative", "elementType": "geometry.fill", "stylers": [ { "color": "#000000" } ] },
         { "featureType": "administrative", "elementType": "geometry.stroke", "stylers": [ { "color": "#144b53" }, { "lightness": 14 }, { "weight": 1.4 } ] },
         { "featureType": "landscape", "elementType": "all", "stylers": [ { "color": "#08304b" } ] },
-        { "featureType": "poi", "elementType": "all", "stylers": [ { "visibility": "off" } ] },
         { "featureType": "road", "elementType": "geometry", "stylers": [ { "color": "#21618c" }, { "lightness": 30 } ] },
-        { "featureType": "road", "elementType": "labels", "stylers": [ { "visibility": "on" } ] },
-        { "featureType": "transit", "elementType": "all", "stylers": [ { "visibility": "off" } ] },
-        { "featureType": "water", "elementType": "all", "stylers": [ { "color": "#2D333C" }, { "visibility": "on" } ] }
+        { "featureType": "water", "elementType": "all", "stylers": [ { "color": "#2D333C" } ] }
     ];
 
-    // Inicializa el mapa sin ubicación predefinida; se usará cuando se calcule la ruta.
+    // Inicializa el mapa sin ubicación predefinida.
     function initMap(center) {
-        var mapOptions = {
+        map = new google.maps.Map(document.getElementById('map'), {
             center: center,
             zoom: 13,
-            disableDefaultUI: false, // Desactiva la mayoría de los controles por defecto.
-            streetViewControl: false, // Quita el botón de Street View.
-            mapTypeControl: false,    // Quita los botones de "mapa" y "satélite".
-            fullscreenControl: false, // Quita el botón de pantalla completa.
             styles: customMapStyle,
-        };
-
-        var map = new google.maps.Map(document.getElementById('map'), mapOptions);
-        
+            disableDefaultUI: false,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false
+        });
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({ draggable: true });
         directionsRenderer.setMap(map);
@@ -168,15 +161,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateRouteInfo(directions) {
         var leg = directions.routes[0].legs[0];
-        var duration = leg.duration.value; // segundos
+        var duration = leg.duration.value;
         document.getElementById('estimated_time').value = duration;
         var minutes = Math.ceil(duration / 60);
-        // Para viajes programados, usar la hora planificada como base
         var scheduledTimeInput = document.getElementById('scheduled_time');
         var baseTime = (scheduledTimeInput && scheduledTimeInput.value) ? new Date(scheduledTimeInput.value) : new Date();
         var arrivalTime = new Date(baseTime.getTime() + duration * 1000);
         var arrivalStr = arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        routeInfoDiv.innerHTML = '<p>Tiempo estimado: ' + minutes + ' minutos. Hora estimada de llegada: ' + arrivalStr + '</p>';
+        routeInfoDiv.innerHTML = '<p>Tiempo estimado: ' + minutes + ' minutos. Hora de llegada: ' + arrivalStr + '</p>';
     }
 
     function updateCoordinates(start, end) {
@@ -197,9 +189,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function geocodeAddress(address, callback) {
+        // Llamada a nuestro endpoint en el controlador
+        fetch('/api/maps/geocode?address=' + encodeURIComponent(address))
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'OK' && data.results && data.results.length > 0) {
+                callback(data.results[0].geometry.location);
+            } else {
+                callback(null);
+            }
+        })
+        .catch(() => callback(null));
+    }
+
     function calculateRoute() {
         loader.style.display = 'block';
-        // Almacenamos los valores iniciales ingresados por el usuario (si es edición manual)
+        // Guardar direcciones ingresadas manualmente
         document.getElementById('pickup_location_initial').value = pickupInput.value;
         document.getElementById('dropoff_location_initial').value = dropoffInput.value;
         
@@ -210,32 +216,27 @@ document.addEventListener('DOMContentLoaded', function() {
             loader.style.display = 'none';
             return;
         }
-        // Geocodificar la dirección de recogida si no hay coordenadas guardadas.
         if (pickupLatInput.value && pickupLngInput.value) {
             var pickupLatLng = new google.maps.LatLng(parseFloat(pickupLatInput.value), parseFloat(pickupLngInput.value));
             proceedWithPickup(pickupLatLng);
         } else {
-            var geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ 'address': pickupAddress }, function(results, status) {
-                if (status === 'OK') {
-                    var pickupLatLng = results[0].geometry.location;
-                    pickupLatInput.value = pickupLatLng.lat();
-                    pickupLngInput.value = pickupLatLng.lng();
-                    proceedWithPickup(pickupLatLng);
+            geocodeAddress(pickupAddress, function(pickupLatLng) {
+                if (pickupLatLng) {
+                    pickupLatInput.value = pickupLatLng.lat;
+                    pickupLngInput.value = pickupLatLng.lng;
+                    proceedWithPickup(new google.maps.LatLng(pickupLatLng.lat, pickupLatLng.lng));
                 } else {
-                    alert("No se pudo geocodificar la dirección de recogida: " + status);
+                    alert("No se pudo geocodificar la dirección de recogida.");
                     loader.style.display = 'none';
                 }
             });
         }
         
         function proceedWithPickup(pickupLatLng) {
-            var geocoder2 = new google.maps.Geocoder();
-            geocoder2.geocode({ 'address': dropoffAddress }, function(results, status) {
-                if (status === 'OK') {
-                    var dropoffLatLng = results[0].geometry.location;
-                    dropoffLatInput.value = dropoffLatLng.lat();
-                    dropoffLngInput.value = dropoffLatLng.lng();
+            geocodeAddress(dropoffAddress, function(dropoffLatLng) {
+                if (dropoffLatLng) {
+                    dropoffLatInput.value = dropoffLatLng.lat;
+                    dropoffLngInput.value = dropoffLatLng.lng;
                     
                     if (!map) {
                         initMap(pickupLatLng);
@@ -245,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     var request = {
                         origin: pickupLatLng,
-                        destination: dropoffLatLng,
+                        destination: new google.maps.LatLng(dropoffLatLng.lat, dropoffLatLng.lng),
                         travelMode: google.maps.TravelMode.DRIVING
                     };
                     directionsService.route(request, function(result, status) {
@@ -253,8 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             directionsRenderer.setDirections(result);
                             updateRouteInfo(result);
                             loader.style.display = 'none';
-                            placeDraggableMarkers(pickupLatLng, dropoffLatLng);
-                            // Luego de calcular la ruta, mostrar el modal de selección de servicio
+                            placeDraggableMarkers(pickupLatLng, new google.maps.LatLng(dropoffLatLng.lat, dropoffLatLng.lng));
                             showServiceModal(result);
                         } else {
                             alert("Error al calcular la ruta: " + status);
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 } else {
-                    alert("No se pudo geocodificar la dirección de destino: " + status);
+                    alert("No se pudo geocodificar la dirección de destino.");
                     loader.style.display = 'none';
                 }
             });
@@ -329,6 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBody.innerHTML = "";
         serviceTypes.forEach(function(service) {
             var cost = (distanceKm * service.price).toFixed(2);
+            // Cada tarjeta tendrá atributos de datos para el servicio
             var cardHtml = '<div class="card mb-2 service-card" data-service-id="'+service.id+'" data-service-price="'+service.price+'">' +
                 '<div class="card-body d-flex justify-content-between align-items-center">' +
                 '<div>' +
@@ -336,15 +337,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<small>Tiempo estimado: ' + Math.ceil(leg.duration.value / 60) + ' min</small>' +
                 '</div>' +
                 '<div>' +
-                '<strong>Q.' + cost + '</strong>' +
+                '<strong>$' + cost + '</strong>' +
                 '</div>' +
                 '</div>' +
                 '</div>';
             modalBody.innerHTML += cardHtml;
         });
-        // Mostrar el modal usando Bootstrap
         $('#serviceModal').modal('show');
 
+        // Una vez que se muestra el modal, se agregan listeners a las tarjetas
         document.querySelectorAll('.service-card').forEach(function(card) {
             card.addEventListener('click', function() {
                 var serviceId = this.getAttribute('data-service-id');
@@ -395,16 +396,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Evento "Calcular viaje"
     document.getElementById('calculateRoute').addEventListener('click', function(e) {
         e.preventDefault();
         calculateRoute();
     });
 
-    // Botón "Ubicación Actual"
     currentLocationBtn.addEventListener('click', function() {
         if (pickupInput.disabled) {
-            // Deseleccionar: limpiar y habilitar el input
             pickupInput.value = "";
             pickupLatInput.value = "";
             pickupLngInput.value = "";
@@ -438,7 +436,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Doble clic en "Ubicación Actual" para reactivar el input
     currentLocationBtn.addEventListener('dblclick', function() {
         pickupInput.value = "";
         pickupLatInput.value = "";
@@ -449,31 +446,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Funcionalidad para minimizar y restaurar el modal de servicios
     $('#serviceModal').on('hide.bs.modal', function(e) {
-        // Si el modal se está minimizando, evitar que se cierre por completo
         if ($(this).data('minimized')) {
             e.preventDefault();
         }
     });
 
     document.getElementById('minimizeModalBtn').addEventListener('click', function() {
-        // Minimiza el modal: oculta body y footer, muestra botón de restaurar
         $('#serviceModal .modal-body, #serviceModal .modal-footer').slideUp();
         $('#serviceModal').data('minimized', true);
         restoreModalBtn.style.display = 'block';
     });
 
     restoreModalBtn.addEventListener('click', function() {
-        // Restaura el modal
         $('#serviceModal .modal-body, #serviceModal .modal-footer').slideDown();
         $('#serviceModal').data('minimized', false);
         restoreModalBtn.style.display = 'none';
     });
 
     $('#serviceModal').on('hide.bs.modal', function () {
-    if (document.activeElement && $.contains(this, document.activeElement)) {
-        document.activeElement.blur();
-    }
-});
+        if (document.activeElement && $.contains(this, document.activeElement)) {
+            document.activeElement.blur();
+        }
+    });
 });
 </script>
 @endsection
