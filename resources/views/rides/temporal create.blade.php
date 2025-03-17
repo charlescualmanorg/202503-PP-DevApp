@@ -7,15 +7,13 @@
         @csrf
         <!-- Tipo de viaje y tiempo estimado -->
         <input type="hidden" name="type" value="{{ $type }}">
-        <input type="hidden" name="estimated_time" id="estimated_time" value="">
-        
+        <input type="hidden" name="estimated_time" id="estimated_time" value="">    
         <!-- Coordenadas de recogida y destino -->
         <input type="hidden" id="pickup_lat" name="pickup_lat" value="">
         <input type="hidden" id="pickup_lng" name="pickup_lng" value="">
         <input type="hidden" id="dropoff_lat" name="dropoff_lat" value="">
         <input type="hidden" id="dropoff_lng" name="dropoff_lng" value="">
-        
-        <!-- Campos para almacenar los textos ingresados manualmente (no actualizados por drag) -->
+        <!-- Campos para almacenar las direcciones ingresadas manualmente (no actualizados por drag) -->
         <input type="hidden" id="pickup_location_initial" name="pickup_location_initial" value="">
         <input type="hidden" id="dropoff_location_initial" name="dropoff_location_initial" value="">
         
@@ -46,6 +44,8 @@
         <!-- Botón para calcular la ruta -->
         <div class="form-group">
             <button type="button" id="calculateRoute" class="btn btn-primary">Calcular viaje</button>
+            <button type="button" id="submitRide" class="btn btn-success" style="display:none;">Solicitar Viaje</button>
+            <a href="/" class="btn btn-danger">Cancelar</a>
         </div>
         
         <!-- Loader -->
@@ -56,21 +56,15 @@
             <p>Cargando ruta...</p>
         </div>
         
+        <!-- Información de la ruta (tiempo estimado y hora de llegada) -->
+        <div id="routeInfo"></div>
+
         <!-- Contenedor del mapa -->
         <div class="form-group">
             <label>Ruta a Recorrer:</label>
             <div id="map" style="height: 400px; width: 100%;"></div>
         </div>
         
-        <!-- Información de la ruta (tiempo estimado y hora de llegada) -->
-        <div id="routeInfo"></div>
-        
-        <div class="form-group">
-            <!-- El registro se genera vía AJAX al seleccionar un servicio -->
-            <!-- Este botón ya no enviará el formulario, pues la creación de la solicitud se realizará por JS -->
-            <button type="button" id="submitRide" class="btn btn-success" style="display:none;">Solicitar Viaje</button>
-            <a href="/" class="btn btn-danger">Cancelar</a>
-        </div>
     </form>
 </div>
 
@@ -80,14 +74,20 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="serviceModalLabel">Selecciona el Servicio</h5>
-        <button type="button" id="minimizeModalBtn" class="btn btn-sm btn-secondary"><i class="fa-solid fa-window-minimize"></i></button>
-        <button type="button" id="restoreModalBtn" class="btn btn-sm btn-secondary" style="display:none; z-index:1200;"><i class="fa-solid fa-window-maximize"></i></button>
+        <!-- Botones en grupo para minimizar/restaurar -->
+        <div class="btn-group" role="group">
+            <button type="button" id="minimizeModalBtn" class="btn btn-sm btn-secondary">
+                <i class="fa-solid fa-window-minimize"></i>
+            </button>
+            <button type="button" id="restoreModalBtn" class="btn btn-sm btn-secondary" style="display:none;">
+                <i class="fa-solid fa-window-maximize"></i>
+            </button>
+        </div>
       </div>
       <div class="modal-body" id="serviceModalBody">
         <!-- El listado de servicios se llenará dinámicamente -->
       </div>
       <div class="modal-footer" id="serviceModalFooter">
-        <!-- Este botón cierra el modal, pero la selección se realiza al hacer clic en una tarjeta -->
         <button type="button" class="btn btn-primary" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
@@ -97,15 +97,18 @@
 @endsection
 
 @section('scripts')
-<!-- Google Maps JavaScript API (clave obtenida desde config) -->
+<!-- Google Maps JavaScript API -->
 <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googlemaps.key') }}&libraries=places" defer></script>
 
 <script>
+// Se asume que 'serviceTypes' se inyecta desde el controlador como JSON.
+// Ejemplo: [{"id":1,"description":"Taxi","icon":"<i class='fa-solid fa-taxi'></i>","price":2.50}, ...]
 var serviceTypes = @json($serviceTypes);
 
 document.addEventListener('DOMContentLoaded', function() {
     var map, directionsService, directionsRenderer;
     var pickupMarker, dropoffMarker;
+    var availableVehicleMarkers = []; // Para vehículos disponibles
     var loader = document.getElementById('loader');
     var routeInfoDiv = document.getElementById('routeInfo');
     var pickupInput = document.getElementById('pickup_location');
@@ -115,6 +118,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var dropoffLatInput = document.getElementById('dropoff_lat');
     var dropoffLngInput = document.getElementById('dropoff_lng');
     var currentLocationBtn = document.getElementById('currentLocationBtn');
+    var pickupInitialInput = document.getElementById('pickup_location_initial');
+    var dropoffInitialInput = document.getElementById('dropoff_location_initial');
     var restoreModalBtn = document.getElementById('restoreModalBtn');
 
     var customMapStyle = [
@@ -130,15 +135,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializa el mapa sin ubicación predefinida.
     function initMap(center) {
-        map = new google.maps.Map(document.getElementById('map'), {
+        var mapOptions = {
             center: center,
             zoom: 13,
-            styles: customMapStyle,
             disableDefaultUI: false,
             streetViewControl: false,
             mapTypeControl: false,
-            fullscreenControl: false
-        });
+            fullscreenControl: false,
+            styles: customMapStyle,
+        };
+
+        map = new google.maps.Map(document.getElementById('map'), mapOptions);
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({ draggable: true });
         directionsRenderer.setMap(map);
@@ -190,17 +197,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function geocodeAddress(address, callback) {
-        // Llamada a nuestro endpoint en el controlador
         fetch('/api/maps/geocode?address=' + encodeURIComponent(address))
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'OK' && data.results && data.results.length > 0) {
-                callback(data.results[0].geometry.location);
-            } else {
-                callback(null);
-            }
-        })
-        .catch(() => callback(null));
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'OK' && data.results && data.results.length > 0) {
+                    callback(data.results[0].geometry.location);
+                } else {
+                    callback(null);
+                }
+            })
+            .catch(() => callback(null));
     }
 
     function calculateRoute() {
@@ -256,6 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             loader.style.display = 'none';
                             placeDraggableMarkers(pickupLatLng, new google.maps.LatLng(dropoffLatLng.lat, dropoffLatLng.lng));
                             showServiceModal(result);
+                            // Actualizar vehículos disponibles en tiempo real
+                            updateAvailableVehicles(pickupLatLng);
                         } else {
                             alert("Error al calcular la ruta: " + status);
                             loader.style.display = 'none';
@@ -267,6 +275,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+    }
+
+    // Actualiza los marcadores de vehículos disponibles (simulados o vía endpoint real)
+    var availableVehicleMarkers = [];
+    function updateAvailableVehicles(center) {
+        // Ejemplo: hacer una petición a '/api/vehicles/available' con lat y lng
+        fetch('/api/vehicles/available?lat=' + center.lat() + '&lng=' + center.lng())
+            .then(response => response.json())
+            .then(data => {
+                // Limpiar marcadores existentes
+                availableVehicleMarkers.forEach(function(marker) {
+                    marker.setMap(null);
+                });
+                availableVehicleMarkers = [];
+                // Agregar nuevos marcadores
+                data.forEach(function(vehicle) {
+                    var marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(vehicle.lat, vehicle.lng),
+                        map: map,
+                        icon: vehicle.icon_url || 'https://cdn-icons-png.flaticon.com/512/743/743007.png',
+                        title: vehicle.name || "Vehículo Disponible"
+                    });
+                    availableVehicleMarkers.push(marker);
+                });
+            })
+            .catch(error => {
+                console.error("Error al obtener vehículos disponibles:", error);
+            });
     }
 
     function placeDraggableMarkers(pickupLatLng, dropoffLatLng) {
@@ -329,7 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBody.innerHTML = "";
         serviceTypes.forEach(function(service) {
             var cost = (distanceKm * service.price).toFixed(2);
-            // Cada tarjeta tendrá atributos de datos para el servicio
             var cardHtml = '<div class="card mb-2 service-card" data-service-id="'+service.id+'" data-service-price="'+service.price+'">' +
                 '<div class="card-body d-flex justify-content-between align-items-center">' +
                 '<div>' +
@@ -337,25 +372,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<small>Tiempo estimado: ' + Math.ceil(leg.duration.value / 60) + ' min</small>' +
                 '</div>' +
                 '<div>' +
-                '<strong>$' + cost + '</strong>' +
+                '<strong>Q.' + cost + '</strong>' +
                 '</div>' +
                 '</div>' +
                 '</div>';
             modalBody.innerHTML += cardHtml;
         });
+        // Mostrar el modal usando Bootstrap
         $('#serviceModal').modal('show');
 
-        // Una vez que se muestra el modal, se agregan listeners a las tarjetas
         document.querySelectorAll('.service-card').forEach(function(card) {
             card.addEventListener('click', function() {
                 var serviceId = this.getAttribute('data-service-id');
                 var servicePrice = parseFloat(this.getAttribute('data-service-price'));
-                // Recalcular tarifa
                 var leg = result.routes[0].legs[0];
                 var distanceKm = leg.distance.value / 1000;
                 var fare = (distanceKm * servicePrice).toFixed(2);
 
-                // Preparamos los datos del viaje
                 var rideData = {
                     type: "{{ $type }}",
                     estimated_time: document.getElementById('estimated_time').value,
@@ -369,7 +402,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     status: 'pendiente'
                 };
 
-                // Enviar la solicitud vía AJAX para crear el registro en la tabla rides
+                // Si es viaje programado, incluir scheduled_time
+                var scheduledTimeInput = document.getElementById('scheduled_time');
+                if (scheduledTimeInput) {
+                    rideData.scheduled_time = scheduledTimeInput.value;
+                }
+
                 fetch("{{ route('rides.store') }}", {
                     method: 'POST',
                     headers: {
@@ -378,14 +416,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify(rideData)
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success){
-                        alert('Solicitud de viaje creada exitosamente.');
-                        // Redirigir o actualizar la vista según convenga
-                        window.location.href = "/rides/" + data.ride.id; // ejemplo: redirigir a la vista del viaje
-                    } else {
-                        alert('Ocurrió un error al crear la solicitud.');
+                .then(response => response.text())
+                .then(text => {
+                    console.log("Respuesta:", text);
+                    try {
+                        var data = JSON.parse(text);
+                        if(data.success){
+                            alert('Solicitud de viaje creada exitosamente.');
+                            window.location.href = "/rides/" + data.ride.id;
+                        } else {
+                            alert('Ocurrió un error al crear la solicitud.');
+                        }
+                    } catch(e) {
+                        console.error("Error parseando JSON:", e, text);
+                        alert('Error al procesar la respuesta del servidor.');
                     }
                 })
                 .catch(error => {
@@ -444,7 +488,6 @@ document.addEventListener('DOMContentLoaded', function() {
         currentLocationBtn.classList.remove('active');
     });
     
-    // Funcionalidad para minimizar y restaurar el modal de servicios
     $('#serviceModal').on('hide.bs.modal', function(e) {
         if ($(this).data('minimized')) {
             e.preventDefault();
