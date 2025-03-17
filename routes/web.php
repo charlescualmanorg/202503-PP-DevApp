@@ -50,3 +50,8 @@ Route::middleware(['auth'])->group(function () {
 Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'role:admin']], function () {
     Route::resource('service-types', 'ServiceTypeController');
 });
+
+use App\Http\Controllers\DriverStatusController;
+
+Route::post('/api/driver/status', [DriverStatusController::class, 'update']);
+Route::get('/api/driver/status', [DriverStatusController::class, 'show']);
