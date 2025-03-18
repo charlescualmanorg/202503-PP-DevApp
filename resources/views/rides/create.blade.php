@@ -111,6 +111,7 @@ var serviceTypes = @json($serviceTypes);
 document.addEventListener('DOMContentLoaded', function() {
     var map, directionsService, directionsRenderer;
     var pickupMarker, dropoffMarker;
+    var availableVehicleMarkers = [];
     var loader = document.getElementById('loader');
     var routeInfoDiv = document.getElementById('routeInfo');
     var pickupInput = document.getElementById('pickup_location');
@@ -131,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { "featureType": "all", "elementType": "labels.icon", "stylers": [ { "visibility": "off" } ] },
         { "featureType": "administrative", "elementType": "geometry.fill", "stylers": [ { "color": "#000000" } ] },
         { "featureType": "administrative", "elementType": "geometry.stroke", "stylers": [ { "color": "#144b53" }, { "lightness": 14 }, { "weight": 1.4 } ] },
-        { "featureType": "landscape", "elementType": "all", "stylers": [ { "color": "#08304b" } ] },
+        { "featureType": "landscape", "elementType": "all", "stylers": [ { "color": "#08304b" } ] }, //#4a6c82 //#08304b
         { "featureType": "poi", "elementType": "all", "stylers": [ { "visibility": "off" } ] },
         { "featureType": "road", "elementType": "geometry", "stylers": [ { "color": "#21618c" }, { "lightness": 30 } ] },
         { "featureType": "road", "elementType": "labels", "stylers": [ { "visibility": "on" } ] },
@@ -140,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     // Inicializa el mapa sin ubicación predefinida; se usará cuando se calcule la ruta.
+    var map, directionsService, directionsRenderer;
     function initMap(center) {
         var mapOptions = {
             center: center,
@@ -148,13 +150,13 @@ document.addEventListener('DOMContentLoaded', function() {
             streetViewControl: false, // Quita el botón de Street View.
             mapTypeControl: false,    // Quita los botones de "mapa" y "satélite".
             fullscreenControl: false, // Quita el botón de pantalla completa.
-            styles: customMapStyle,
+            styles: customMapStyle
         };
 
-        var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+        map = new google.maps.Map(document.getElementById('map'), mapOptions);
         
         directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer({ draggable: true });
+        directionsRenderer = new google.maps.DirectionsRenderer({ draggable: true,suppressMarkers: true });
         directionsRenderer.setMap(map);
 
         directionsRenderer.addListener('directions_changed', function() {
@@ -204,6 +206,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+  // Función para geocodificar una dirección usando Google Maps Geocoder
+  function geocodeAddress(address, callback) {
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ 'address': address }, function(results, status) {
+            if (status === 'OK' && results[0]) {
+                callback(results[0].geometry.location);
+            } else {
+                callback(null);
+            }
+        });
+    }
+
     function calculateRoute() {
         loader.style.display = 'block';
         // Almacenamos los valores iniciales ingresados por el usuario (si es edición manual)
@@ -237,10 +251,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         function proceedWithPickup(pickupLatLng) {
-            var geocoder2 = new google.maps.Geocoder();
-            geocoder2.geocode({ 'address': dropoffAddress }, function(results, status) {
-                if (status === 'OK') {
-                    var dropoffLatLng = results[0].geometry.location;
+            updateOnlineDrivers(pickupLatLng);
+            geocodeAddress(dropoffAddress, function(dropoffLatLng) {
+                if (dropoffLatLng) {
                     dropoffLatInput.value = dropoffLatLng.lat();
                     dropoffLngInput.value = dropoffLatLng.lng();
                     
@@ -252,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     var request = {
                         origin: pickupLatLng,
-                        destination: dropoffLatLng,
+                        destination: new google.maps.LatLng(dropoffLatLng.lat(), dropoffLatLng.lng()),
                         travelMode: google.maps.TravelMode.DRIVING
                     };
                     directionsService.route(request, function(result, status) {
@@ -260,8 +273,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             directionsRenderer.setDirections(result);
                             updateRouteInfo(result);
                             loader.style.display = 'none';
-                            placeDraggableMarkers(pickupLatLng, dropoffLatLng);
-                            // Luego de calcular la ruta, mostrar el modal de selección de servicio
+                            
+                            placeDraggableMarkers(pickupLatLng, new google.maps.LatLng(dropoffLatLng.lat(), dropoffLatLng.lng()));
                             showServiceModal(result);
                         } else {
                             alert("Error al calcular la ruta: " + status);
@@ -282,12 +295,21 @@ document.addEventListener('DOMContentLoaded', function() {
         pickupMarker = new google.maps.Marker({
             position: pickupLatLng,
             map: map,
+            icon: {
+                url: 'https://cdn-icons-png.flaticon.com/512/13223/13223768.png',
+                scaledSize: new google.maps.Size(32, 32)
+            },
             draggable: true,
             title: "Lugar de Recogida"
         });
+        
         dropoffMarker = new google.maps.Marker({
             position: dropoffLatLng,
             map: map,
+            icon: {
+                url: 'https://cdn-icons-png.flaticon.com/512/13223/13223768.png',
+                scaledSize: new google.maps.Size(32, 32)
+            },
             draggable: true,
             title: "Lugar de Destino"
         });
@@ -326,7 +348,64 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+        
+    // Función para actualizar en tiempo real los conductores online desde Redis
+    function updateOnlineDrivers(center) {
+        fetch("{{ url('/vehicles/available') }}?lat=" + center.lat() + "&lng=" + center.lng())
+            .then(response => response.json())
+            .then(responseData => {
+            // Verifica si la respuesta es un arreglo o si está envuelto en 'data'
+            var drivers = [];
+            if (Array.isArray(responseData)) {
+                drivers = responseData;
+            } else if (responseData.data && Array.isArray(responseData.data)) {
+                drivers = responseData.data;
+            } else {
+                console.error("Respuesta no válida para conductores online:", responseData);
+                return;
+            }
+
+                // Limpiar marcadores existentes
+                availableVehicleMarkers.forEach(function(marker) {
+                    marker.setMap(null);
+                });
+                availableVehicleMarkers = [];
+                // Agregar nuevos marcadores
+                drivers.forEach(function(driver) {
+                // Asegurarse de que 'driver.lat' y 'driver.lng' sean números válidos
+                var lat = parseFloat(driver.lat);
+                var lng = parseFloat(driver.lng);
+                if (isNaN(lat) || isNaN(lng)) {
+                    console.error("Coordenadas inválidas para el conductor:", driver);
+                    return;
+                }
+
+                    var marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(lat, lng),
+                        map: map,
+                        icon: {
+                            url: driver.icon_url || 'https://cdn-icons-png.flaticon.com/512/3097/3097180.png',
+                            scaledSize: new google.maps.Size(32, 32)
+                        },
+                        title: driver.name || "Conductor Disponible",
+                        zIndex: 9999
+                    });
+                    availableVehicleMarkers.push(marker);
+                });
+            })
+            .catch(error => {
+                console.error("Error al obtener conductores online:", error);
+            });
+    }
+
+    // Llama a updateOnlineDrivers periódicamente cada 30 segundos (si la ubicación de recogida está definida)
+    setInterval(function() {
+        if (pickupLatInput.value && pickupLngInput.value) {
+            var center = new google.maps.LatLng(parseFloat(pickupLatInput.value), parseFloat(pickupLngInput.value));
+            updateOnlineDrivers(center);
+        }
+    }, 10000);
+
     // Mostrar modal de selección de servicio y cálculo de tarifa
     function showServiceModal(result) {
         var leg = result.routes[0].legs[0];
@@ -451,6 +530,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }, function() {
                     alert("Error al obtener la ubicación actual.");
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
                 });
             } else {
                 alert("Tu navegador no soporta geolocalización.");
