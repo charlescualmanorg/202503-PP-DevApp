@@ -55,3 +55,4 @@ use App\Http\Controllers\DriverStatusController;
 
 Route::post('/api/driver/status', [DriverStatusController::class, 'update']);
 Route::get('/api/driver/status', [DriverStatusController::class, 'show']);
+Route::get('/vehicles/available', [DriverStatusController::class, 'available']);
