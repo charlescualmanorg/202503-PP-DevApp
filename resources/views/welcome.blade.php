@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Laravel</title>
+        <title>Proyecto</title>
 
         <!-- Fonts -->
         <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;600&display=swap" rel="stylesheet">
@@ -68,12 +68,12 @@
             @if (Route::has('login'))
                 <div class="top-right links">
                     @auth
-                        <a href="{{ url('/home') }}">Home</a>
+                        <a href="{{ route('rides.new') }}">Inicio</a>
                     @else
                         <a href="{{ route('login') }}">Login</a>
 
                         @if (Route::has('register'))
-                            <a href="{{ route('register') }}">Register</a>
+                            <a href="{{ route('register') }}">Registrarse</a>
                         @endif
                     @endauth
                 </div>
@@ -81,18 +81,17 @@
 
             <div class="content">
                 <div class="title m-b-md">
-                    Laravel
+                Transporte Privado
+                </div>
+                <div>
+                <h3>Proyecto Evaluación General Privada Área de análisis y Diseño de Sistemas</h3>
+                <h3>
+                    Guatemala Abril 2025
+                </h3>
                 </div>
 
                 <div class="links">
-                    <a href="rides/new">Nuevo viaje</a>
-                    <a href="admin/register">Registro Admin</a>
-                    <a href="https://laravel-news.com">News</a>
-                    <a href="https://blog.laravel.com">Blog</a>
-                    <a href="https://nova.laravel.com">Nova</a>
-                    <a href="https://forge.laravel.com">Forge</a>
-                    <a href="https://vapor.laravel.com">Vapor</a>
-                    <a href="https://github.com/laravel/laravel">GitHub</a>
+                    <a href="rides/new">Carlos Augusto Monterroso Lima - 0900-06-2734</a>
                 </div>
             </div>
         </div>
