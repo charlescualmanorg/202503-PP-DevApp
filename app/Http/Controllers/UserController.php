@@ -81,6 +81,14 @@ class UserController extends Controller
         // Cargar el usuario autenticado y, en caso de conductor, cargar también sus datos
         $user = auth()->user();
         $user->load('driver');
+        return view('admin.users.edit', compact('user'));
+    }
+
+    public function editprofile()
+    {
+        // Cargar el usuario autenticado y, en caso de conductor, cargar también sus datos
+        $user = auth()->user();
+        $user->load('driver');
         return view('admin.users.updateprofile', compact('user'));
     }
 
