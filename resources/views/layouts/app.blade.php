@@ -80,6 +80,9 @@
                                     <a class="dropdown-item" href="{{ route('rides.new') }}">
                                         {{ __('Nuevo viaje') }}
                                     </a>
+                                    <a class="dropdown-item" href="{{ route('rides.clientindex') }}">
+                                        {{ __('Listado viajes cliente') }}
+                                    </a>
                                     @if(Auth::check() && Auth::user()->role === 'conductor')
                                     <a class="dropdown-item" href="{{ route('rides.driverindex') }}">
                                         {{ __('Listado viajes') }}
@@ -88,11 +91,7 @@
                                         {{ __('Configuración de conductor') }}
                                     </a>
                                     @endif
-                                    @if(Auth::check() && Auth::user()->role === 'cliente')
-                                    <a class="dropdown-item" href="{{ route('rides.clientindex') }}">
-                                        {{ __('Listado viajes') }}
-                                    </a>
-                                    @endif
+                                    
 
                                     
                                 
