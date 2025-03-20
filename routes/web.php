@@ -47,6 +47,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/driver/status', [DriverStatusController::class, 'show']);
     Route::get('/vehicles/available', [DriverStatusController::class, 'available']);
 
+    //configuracion online / offline conductor
+    Route::get('/driverstatus', 'HomeController@driverstatus')->name('driverstatus');
+
     Route::get('/user/profile', [UserController::class, 'edit'])->name('user.edit');
     Route::put('/user/profile', [UserController::class, 'updateProfile'])->name('user.updateProfile');
 
