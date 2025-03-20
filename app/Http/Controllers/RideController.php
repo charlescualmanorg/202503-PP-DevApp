@@ -97,7 +97,7 @@ class RideController extends Controller
         $user = auth()->user();
 
         // Verificar que el usuario esté autenticado y sea de tipo 'cliente'
-        if (!$user || $user->role !== 'cliente') {
+        if (!$user) {
             // Redirigir o abortar con un error 403 si el usuario no es un cliente
             abort(403, 'Acceso no autorizado.');
         }
