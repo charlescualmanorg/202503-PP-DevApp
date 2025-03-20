@@ -17,11 +17,11 @@ class Driver extends Model
 
     public function vehicle()
     {
-        return $this->hasOne(Vehicle::class);
+        return $this->hasOne(\App\Vehicle::class);
     }
 
     public function serviceType()
     {
-        return $this->belongsTo(\App\Models\ServiceType::class, 'service_type_id');
+        return $this->belongsTo(\App\ServiceType::class, 'service_type_id');
     }
 }

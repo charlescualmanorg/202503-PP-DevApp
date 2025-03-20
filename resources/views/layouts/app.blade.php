@@ -65,7 +65,7 @@
                             </li>
                             @if (Route::has('register'))
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
+                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Registrarse') }}</a>
                                 </li>
                             @endif
                         @else
@@ -74,6 +74,25 @@
                                     {{ Auth::user()->name }}
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                                    <a class="dropdown-item" href="{{ route('user.edit') }}">
+                                        {{ __('Perfil') }}
+                                    </a>
+                                    @if(Auth::check() && Auth::user()->role === 'conductor')
+                                    <a class="dropdown-item" href="{{ route('rides.driverindex') }}">
+                                        {{ __('Listado viajes') }}
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('user.edit') }}">
+                                        {{ __('Configuración de conductor') }}
+                                    </a>
+                                    @endif
+                                    @if(Auth::check() && Auth::user()->role === 'cliente')
+                                    <a class="dropdown-item" href="{{ route('rides.clientindex') }}">
+                                        {{ __('Viajes') }}
+                                    </a>
+                                    @endif
+
+                                    
+                                
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">
@@ -85,10 +104,10 @@
                                     </form>
                                 </div>    
                             </li>
-
+                            @if(Auth::check() && Auth::user()->role === 'admin')
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ __('Servicios') }}
+                                    {{ __('Servicios Administrativos') }}
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
@@ -97,12 +116,17 @@
                                         {{ __('Listado servicios') }}
                                     </a>
 
-                                    <a class="dropdown-item" href="{{ route('service-types.create') }}">
-                                        {{ __('Crear servicios') }}
+                                    <a class="dropdown-item" href="{{ route('admin.users.index') }}">
+                                        {{ __('Listado de usuarios') }}
                                     </a>
+
+                                    <a class="dropdown-item" href="{{ route('admin.vehicles.index') }}">
+                                        {{ __('Listado de vehiculos') }}
+                                    </a>
+
                                 </div>
                             </li>
-
+                            @endif
                         @endguest
                     </ul>
                 </div>

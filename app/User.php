@@ -40,6 +40,6 @@ class User extends Authenticatable
     // Relación con Conductores (un usuario puede ser un conductor)
     public function driver()
     {
-        return $this->hasOne(Driver::class);
+        return $this->hasOne(\App\Driver::class);
     }
 }

@@ -16,6 +16,8 @@
         <!-- Campos para almacenar las direcciones ingresadas manualmente (no actualizados por drag) -->
         <input type="hidden" id="pickup_location_initial" name="pickup_location_initial" value="">
         <input type="hidden" id="dropoff_location_initial" name="dropoff_location_initial" value="">
+        <!-- Campo para almacenar el polyline codificado -->
+        <input type="hidden" id="encoded_polyline" name="encoded_polyline" value="">
         
         <!-- Dirección de recogida con botón "Ubicación Actual" -->
         <div class="form-group">
@@ -44,9 +46,12 @@
         <!-- Botón para calcular la ruta -->
         <div class="form-group">
             <button type="button" id="calculateRoute" class="btn btn-primary">Calcular viaje</button>
-            <button type="button" id="submitRide" class="btn btn-success" style="display:none;">Solicitar Viaje</button>
-            <a href="/" class="btn btn-danger">Cancelar</a>
+            <button type="button" id="submitRide" class="btn btn-secondary" style="display:none;">Solicitar Viaje</button>
+            <a href="/" class="btn btn-secondary">Cancelar</a>
         </div>
+
+        <!-- Información de la ruta -->
+        <div id="routeInfo"></div>
         
         <!-- Loader -->
         <div id="loader" style="display:none; text-align:center; margin-bottom:15px;">
@@ -55,9 +60,6 @@
             </div>
             <p>Cargando ruta...</p>
         </div>
-        
-        <!-- Información de la ruta (tiempo estimado y hora de llegada) -->
-        <div id="routeInfo"></div>
 
         <!-- Contenedor del mapa -->
         <div class="form-group">
@@ -150,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
             streetViewControl: false, // Quita el botón de Street View.
             mapTypeControl: false,    // Quita los botones de "mapa" y "satélite".
             fullscreenControl: false, // Quita el botón de pantalla completa.
-            styles: customMapStyle
+            //styles: customMapStyle
         };
 
         map = new google.maps.Map(document.getElementById('map'), mapOptions);
@@ -272,6 +274,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (status === google.maps.DirectionsStatus.OK) {
                             directionsRenderer.setDirections(result);
                             updateRouteInfo(result);
+                            
+                            // Generar polyline manualmente a partir de los pasos
+                            var path = [];
+                            var steps = result.routes[0].legs[0].steps;
+                            steps.forEach(function(step) {
+                                step.path.forEach(function(latLng) {
+                                    path.push(latLng);
+                                });
+                            });
+                            var encodedPolyline = google.maps.geometry.encoding.encodePath(path);
+                            document.getElementById('encoded_polyline').value = encodedPolyline;
+                            
                             loader.style.display = 'none';
                             
                             placeDraggableMarkers(pickupLatLng, new google.maps.LatLng(dropoffLatLng.lat(), dropoffLatLng.lng()));
@@ -333,6 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    
     function recalcRoute() {
         var request = {
             origin: pickupMarker.getPosition(),
@@ -451,7 +466,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     dropoff_lat: dropoffLatInput.value,
                     dropoff_lng: dropoffLngInput.value,
                     fare: fare,
-                    status: 'pendiente'
+                    status: 'pendiente',
+                    encoded_polyline: document.getElementById('encoded_polyline').value,
                 };
 
                 // Si es viaje programado, incluir scheduled_time
