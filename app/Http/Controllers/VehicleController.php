@@ -11,7 +11,7 @@ class VehicleController extends Controller
     // Listado de vehículos
     public function index()
     {
-        $vehicles = Vehicle::with('driver')->get();
+        $vehicles = Vehicle::with('driver')->paginate(10);
         return view('admin.vehicles.index', compact('vehicles'));
     }
 
