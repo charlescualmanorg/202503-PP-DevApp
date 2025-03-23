@@ -12,7 +12,7 @@ class ServiceTypeController extends Controller
      */
     public function index()
     {
-        $serviceTypes = ServiceType::all();
+        $serviceTypes = ServiceType::paginate(10);
         return view('service_types.index', compact('serviceTypes'));
     }
 
