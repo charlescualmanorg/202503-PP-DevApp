@@ -76,13 +76,13 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit()
-    {
-        // Cargar el usuario autenticado y, en caso de conductor, cargar también sus datos
-        $user = auth()->user();
-        $user->load('driver');
-        return view('admin.users.edit', compact('user'));
-    }
+        public function edit($id)
+        {
+            // Cargar el usuario autenticado y, en caso de conductor, cargar también sus datos
+            $user = User::findOrFail($id);
+            //dd($user);
+            return view('admin.users.edit', compact('user'));
+        }
 
     public function editprofile()
     {
