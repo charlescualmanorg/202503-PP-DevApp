@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             alert('Solicitud de viaje creada exitosamente.');
                             window.location.href = "/rides/" + data.ride.id;
                         } else {
-                            alert('Ocurrió un error al crear la solicitud.');
+                            alert('Ocurrió un error al crear la solicitud. ' + data.message);
                         }
                     } catch(e) {
                         console.error("Error parseando JSON:", e, text);
@@ -504,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    alert('Error al crear la solicitud.');
+                    alert('Error al crear la solicitud.', text);
                 });
             });
         });
