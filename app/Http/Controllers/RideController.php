@@ -30,6 +30,18 @@ class RideController extends Controller
     // Procesar la solicitud de viaje
     public function store(Request $request)
     {
+        // Validar que el usuario no tenga ya un ride pendiente
+        $existingRide = Ride::where('client_id', Auth::id())
+        ->where('status', 'pendiente')
+        ->first();
+
+        if ($existingRide) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Ya tienes una solicitud de viaje pendiente.'
+        ], 422);
+        }
+
         // Validar datos básicos
         $rules = [
             'pickup_location'  => 'required|string',
