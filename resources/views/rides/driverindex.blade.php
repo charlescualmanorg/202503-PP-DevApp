@@ -17,7 +17,7 @@
         @foreach($rides as $ride)
             <div class="card mb-3">
                 <div class="card-header" id="heading{{ $ride->id }}">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center" data-toggle="collapse" data-target="#collapse{{ $ride->id }}" aria-expanded="false" aria-controls="collapse{{ $ride->id }}">
                         <div class="d-flex align-items-center">
                             <!-- Icono del tipo de servicio -->
                             <div class="mr-3" style="font-size: 24px;">
@@ -40,10 +40,6 @@
                                 <button class="btn btn-danger btn-sm ml-2" onclick="updateRideStatus({{ $ride->id }}, 'cancelar')">Cancelar</button>
                                 <button class="btn btn-primary btn-sm ml-2" onclick="updateRideStatus({{ $ride->id }}, 'completar')">Completar</button>
                             @endif
-                            <!-- Botón para expandir detalles -->
-                            <button class="btn btn-link ml-2" type="button" data-toggle="collapse" data-target="#collapse{{ $ride->id }}" aria-expanded="false" aria-controls="collapse{{ $ride->id }}">
-                                Detalles
-                            </button>
                         </div>
                     </div>
                 </div>
