@@ -54,20 +54,22 @@ class RegisterController extends Controller
      */
     protected function validator(array $data)
     {
-        return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'profile_image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif', 'max:4096'],
-            'role'          => ['required', 'in:cliente,conductor'],
-        ]);
+        $rules = [
+            'name'          => 'required|string|max:255',
+            'email'         => 'required|string|email|max:255|unique:users',
+            'password'      => 'required|string|min:8|confirmed',
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:4096',
+            'role'          => 'required|in:cliente,conductor',
+        ];
 
         // Si se registra como conductor, validar campos de vehículo
         if (isset($data['role']) && $data['role'] === 'conductor') {
-            $rules['plate_number'] = ['required', 'string'];
-            $rules['license_number'] = ['required', 'string'];
-            $rules['vehicle_type'] = ['required', 'in:sedan,suv,moto'];
-            $rules['brand']        = ['required', 'string'];
+            $rules['plate_number']    = 'required|string|max:255';
+            $rules['license_number']  = 'required|string|max:255';
+            $rules['vehicle_type']    = 'required|in:sedan,suv,moto';
+            $rules['brand']           = 'required|string|max:255';
+            $rules['model']           = 'required|string|max:255';
+            $rules['service_type_id'] = 'required|exists:service_types,id';
         }
 
         return Validator::make($data, $rules);
@@ -118,6 +120,24 @@ class RegisterController extends Controller
         }
 
         return $user;
+    }
+
+    public function register(Request $request)
+    {
+        $data = $request->all();
+
+        // Validar la solicitud manualmente
+        $validator = $this->validator($data);
+        if ($validator->fails()) {
+            return redirect()->back()
+                             ->withErrors($validator)
+                             ->withInput();
+        }
+
+        $user = $this->create($data);
+        $this->guard()->login($user);
+
+        return redirect($this->redirectPath());
     }
 
     public function showRegistrationForm()

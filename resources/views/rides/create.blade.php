@@ -47,7 +47,7 @@
         <div class="form-group">
             <button type="button" id="calculateRoute" class="btn btn-primary">Calcular viaje</button>
             <button type="button" id="submitRide" class="btn btn-secondary" style="display:none;">Solicitar Viaje</button>
-            <a href="/" class="btn btn-secondary">Cancelar</a>
+            <a href="/rides/new" class="btn btn-secondary">Cancelar</a>
         </div>
 
         <!-- Información de la ruta -->

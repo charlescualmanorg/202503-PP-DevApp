@@ -2,10 +2,19 @@
 
 @section('content')
 <div class="container">
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">{{ __('Register') }}</div>
+                <div class="card-header">{{ __('Registrar') }}</div>
 
                 <div class="card-body">
                     <!-- El formulario debe soportar subida de archivos -->
@@ -77,7 +86,7 @@
                             <div class="form-group row">
                                 <label for="vehicle_type" class="col-md-4 col-form-label text-md-right">{{ __('Tipo de Vehículo') }}</label>
                                 <div class="col-md-6">
-                                    <select id="vehicle_type" name="vehicle_type" class="form-control" required>
+                                    <select id="vehicle_type" name="vehicle_type" class="form-control">
                                         <option value="">Seleccione</option>
                                         <option value="sedan" {{ old('vehicle_type') == 'sedan' ? 'selected' : '' }}>Sedán</option>
                                         <option value="suv" {{ old('vehicle_type') == 'suv' ? 'selected' : '' }}>SUV</option>
@@ -104,8 +113,8 @@
                             <div class="form-group row">
                                 <label for="service_type_id" class="col-md-4 col-form-label text-md-right">{{ __('Tipo de Servicio') }}</label>
                                 <div class="col-md-6">
-                                    <select name="service_type_id" id="service_type_id" class="form-control" required>
-                                        <option value="" require>Seleccione el servicio</option>
+                                    <select name="service_type_id" id="service_type_id" class="form-control">
+                                        <option value="">Seleccione el servicio</option>
                                         @foreach($serviceTypes as $service)
                                             <option value="{{ $service->id }}" {{ old('service_type_id') == $service->id ? 'selected' : '' }}>
                                                 {!! $service->icon !!} {{ $service->description }} - Q.{{ number_format($service->price, 2) }}/Km.
@@ -159,7 +168,7 @@
                         <div class="form-group row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ __('Register') }}
+                                    {{ __('Registrar') }}
                                 </button>
                             </div>
                         </div>
@@ -177,7 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function toggleVehicleFields() {
         const role = document.querySelector('input[name="role"]:checked').value;
-        vehicleFields.style.display = (role === 'conductor') ? 'block' : 'none';
+        // Mostrar campos solo si el rol es conductor
+        if (role === 'conductor') {
+            vehicleFields.style.display = 'block';
+        } else {
+            vehicleFields.style.display = 'none';
+        }
     }
 
     // Verificar al cargar la página
